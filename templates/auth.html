@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} - Medicine Expiry System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .panel {
+      width: 420px;
+      background: white;
+      border-radius: 12px;
+      padding: 28px 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #2f80ed;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .message {
+      background: #f8d7da;
+      color: #842029;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+    }
+
+    .link {
+      text-align: center;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h1>{{ title }}</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="message">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+      <label for="username">Username</label>
+      <input id="username" type="text" name="username" required>
+
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" required>
+
+      <button type="submit">{{ title }}</button>
+    </form>
+
+    <div class="link">
+      {% if title == "Login" %}
+        <p>New user? <a href="{{ url_for('register') }}">Register</a></p>
+      {% else %}
+        <p>Already registered? <a href="{{ url_for('login') }}">Login</a></p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

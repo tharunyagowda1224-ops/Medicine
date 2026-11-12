@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Medicine Expiry Dashboard</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      margin: 0;
+      padding: 20px;
+      color: #202b3c;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 24px;
+    }
+
+    .card, .panel {
+      background: white;
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 16px;
+    }
+
+    .value {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .panel {
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+
+    input, button {
+      box-sizing: border-box;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 7px;
+      font: inherit;
+    }
+
+    input {
+      border: 1px solid #cbd5e1;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="file"] {
+      width: 100%;
+      max-width: 500px;
+    }
+
+    button {
+      border: none;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .logout-button {
+      width: auto;
+      margin-top: 0;
+    }
+
+    .message {
+      background: #e8f5e9;
+      color: #155724;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+
+    .alert-box {
+      padding: 14px 18px;
+      margin: 12px 0;
+      border-radius: 8px;
+      background: #fff3cd;
+      border-left: 6px solid #e0a800;
+      color: #664d03;
+    }
+
+    .expired-alert {
+      background: #f8d7da;
+      border-left-color: #dc3545;
+      color: #842029;
+    }
+
+    .hint {
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef4ff;
+    }
+
+    .product-image {
+      width: 70px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 7px;
+    }
+
+    .risk {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      color: white;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .risk-red {
+      background: #dc2626;
+    }
+
+    .risk-yellow {
+      background: #eab308;
+      color: #222;
+    }
+
+    .risk-green {
+      background: #16a34a;
+    }
+
+    .delete-button {
+      background: #dc2626;
+    }
+
+    .delete-button:hover {
+      background: #b91c1b;
+    }
+
+    .hint small {
+      display: block;
+      margin-top: 8px;
+    }
+
+    .purchase-form input {
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      margin: 6px 0 12px;
+      box-sizing: border-box;
+    }
+
+    .purchase-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    .purchase-table th,
+    .purchase-table td {
+      padding: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <header class="topbar">
+      <h1>Medicine Expiry Dashboard</h1>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button class="logout-button" type="submit">Log out</button>
+      </form>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="message">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if alerts %}
+      <section aria-label="Expiry alerts">
+        <h2>Expiry alerts</h2>
+        {% for alert in alerts %}
+          {% if "expired" in alert|lower %}
+            <div class="alert-box expired-alert" role="alert">{{ alert }}</div>
+          {% else %}
+            <div class="alert-box" role="alert">{{ alert }}</div>
+          {% endif %}
+        {% endfor %}
+      </section>
+    {% else %}
+      <div class="alert-box">
+        No products are expired or due to expire in the next 30 days.
+      </div>
+    {% endif %}
+
+    <section class="cards">
+      <div class="card">
+        <h2>Units expiring within 30 days or already expired</h2>
+        <div class="value">{{ near_expiry_total }}</div>
+      </div>
+
+      <div class="card">
+        <h2>Expired units</h2>
+        <div class="value">{{ expired_total }}</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Scan and add a product</h2>
+      <p class="hint">
+        Upload a clear JPG, PNG, or WEBP image showing the product name and expiry label.
+        The system will detect the expiry date automatically. Verify the date on the package.
+      </p>
+
+      <form method="post" action="{{ url_for('add_product') }}" enctype="multipart/form-data">
+        <label for="image">Product image</label>
+        <input
+          id="image"
+          name="image"
+          type="file"
+          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+          required
+        >
+
+        <label for="name">Product name (optional correction)</label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          maxlength="200"
+          placeholder="Leave blank to use OCR guess"
+        >
+
+        <label for="quantity">Quantity</label>
+        <input
+          id="quantity"
+          name="quantity"
+          type="number"
+          min="1"
+          value="1"
+          required
+        >
+
+        <br>
+        <button type="submit">Scan and save</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Set purchase-planning details</h2>
+      <p class="hint">
+        Enter the same medicine name used in your inventory to estimate how much should be purchased.
+      </p>
+
+      <form method="post" action="{{ url_for('save_purchase_plan') }}" class="purchase-form">
+        <label for="plan-product-name">Medicine name</label>
+        <input
+          id="plan-product-name"
+          type="text"
+          name="product_name"
+          maxlength="200"
+          required
+          placeholder="For example: Paracetamol"
+        >
+
+        <label for="monthly-use">Average units used per month</label>
+        <input
+          id="monthly-use"
+          type="number"
+          name="average_monthly_use"
+          min="1"
+          required
+        >
+
+        <label for="lead-days">Supplier lead time in days</label>
+        <input
+          id="lead-days"
+          type="number"
+          name="supplier_lead_days"
+          min="0"
+          max="365"
+          value="7"
+          required
+        >
+
+        <button type="submit">Save purchase plan</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Estimated purchase quantities</h2>
+      <p class="hint">
+        This estimate covers supplier lead time plus 30 days of safety stock.
+      </p>
+
+      {% if purchase_recommendations %}
+        <table class="purchase-table">
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Current stock</th>
+              <th>Target stock</th>
+              <th>Suggested purchase</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in purchase_recommendations %}
+              <tr>
+                <td>{{ item.plan.product_name }}</td>
+                <td>{{ item.current_stock }}</td>
+                <td>{{ item.target_stock }}</td>
+                <td>
+                  {% if item.recommended_quantity > 0 %}
+                    {{ item.recommended_quantity }} unit(s)
+                  {% else %}
+                    No purchase needed
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No purchase plans yet. Add a medicine name and usage details above.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <h2>Inventory and risk report</h2>
+
+      {% if rows %}
+        <table>
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Product</th>
+              <th>Detected expiry date</th>
+              <th>Time remaining</th>
+              <th>Risk</th>
+              <th>Suggested action</th>
+              <th>Delete</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>
+                  {% if row.product.image_filename %}
+                    <img
+                      class="product-image"
+                      src="{{ url_for('static', filename='uploads/' ~ row.product.image_filename) }}"
+                      alt="{{ row.product.name }}"
+                    >
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
+                <td>
+                  {{ row.product.name }}<br>
+                  Quantity: {{ row.product.quantity }}
+                </td>
+
+                <td>{{ row.product.expiry_date.strftime("%Y-%m-%d") }}</td>
+
+                <td>
+                  {% if row.days_left < 0 %}
+                    Expired {{ -row.days_left }} day(s) ago
+                  {% elif row.days_left == 0 %}
+                    Expires today
+                  {% else %}
+                    {{ row.days_left }} day(s) left
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if row.risk_status == "Expired" or row.risk_status == "High" %}
+                    <span class="risk risk-red">{{ row.risk_status }}</span>
+                  {% elif row.risk_status == "Medium" %}
+                    <span class="risk risk-yellow">{{ row.risk_status }}</span>
+                  {% else %}
+                    <span class="risk risk-green">{{ row.risk_status }}</span>
+                  {% endif %}
+                </td>
+
+                <td>{{ row.recommendation }}</td>
+
+                <td>
+                  <form
+                    method="post"
+                    action="{{ url_for('delete_product', product_id=row.product.id) }}"
+                    onsubmit="return confirm('Delete this product?');">
+                    <button class="delete-button" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No products have been added yet.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
